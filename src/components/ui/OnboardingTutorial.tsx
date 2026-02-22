@@ -5,7 +5,7 @@ const STORAGE_KEY = 'ophi-onboarding-complete'
 interface TutorialStep {
   title: string
   description: string
-  icon: string
+  stepNum: string
   position: 'left' | 'center' | 'right'
 }
 
@@ -13,31 +13,31 @@ const STEPS: TutorialStep[] = [
   {
     title: 'Welcome to Ophi',
     description: 'Ophi translates your Python pandas code into Alteryx workflow visualizations. See exactly how each line maps to an Alteryx tool.',
-    icon: '🐍',
+    stepNum: '',
     position: 'center',
   },
   {
     title: 'Paste or Upload Code',
     description: 'Paste Python code in the left panel, upload a .py or .ipynb file, or pick one of the pre-built samples to get started.',
-    icon: '📝',
+    stepNum: '01',
     position: 'left',
   },
   {
     title: 'Click Translate',
     description: 'Hit the blue arrow button between the panels. Ophi parses each pandas operation and maps it to the closest Alteryx tool.',
-    icon: '➡️',
+    stepNum: '02',
     position: 'center',
   },
   {
     title: 'Explore the Workflow',
     description: 'The right panel shows your code as a connected Alteryx workflow. Click any node to see details about the tool mapping.',
-    icon: '🔗',
+    stepNum: '03',
     position: 'right',
   },
   {
     title: 'Switch Views',
     description: 'Use the tabs to see a Cheat Sheet summary, smart Recommendations, or your original code with Alteryx annotations inline.',
-    icon: '📑',
+    stepNum: '04',
     position: 'right',
   },
 ]
@@ -96,11 +96,17 @@ export function OnboardingTutorial() {
         </div>
 
         <div className="p-6">
-          {/* Icon */}
-          <div className="text-4xl mb-3">{current.icon}</div>
+          {/* Step indicator or logo */}
+          {current.stepNum ? (
+            <div className="text-[10px] font-black tracking-widest text-white bg-duke inline-block px-2 py-0.5 mb-3">
+              STEP {current.stepNum}
+            </div>
+          ) : (
+            <img src="/ophi-logo-80-retina.png" alt="Ophi" className="w-10 h-10 mb-3" />
+          )}
 
           {/* Content */}
-          <h2 className="text-lg font-bold text-text-primary mb-2">{current.title}</h2>
+          <h2 className="text-lg font-black text-text-primary mb-2">{current.title}</h2>
           <p className="text-sm text-text-secondary leading-relaxed mb-6">{current.description}</p>
 
           {/* Navigation */}
