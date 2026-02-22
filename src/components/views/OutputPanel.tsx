@@ -32,7 +32,7 @@ export function OutputPanel() {
     <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
       {/* Header — editorial style */}
       <div className="flex items-center gap-2.5 px-4 py-2 border-b-2 border-text-primary bg-white shrink-0">
-        <h3 className="text-sm font-black uppercase tracking-wide flex-1">Alteryx Breakdown</h3>
+        <h3 className="text-sm font-black uppercase tracking-wide flex-1">Explain To Me</h3>
         {steps.length > 0 && (
           <span className="text-[10px] font-black tracking-widest text-white bg-duke px-2 py-0.5">
             {steps.length} STEPS

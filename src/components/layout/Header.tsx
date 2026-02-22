@@ -11,9 +11,6 @@ export function Header() {
       <div className="flex items-center gap-2.5 flex-1">
         <img src="/ophi-logo-80-retina.png" alt="Ophi" className="w-7 h-7" />
         <span className="text-lg font-bold gradient-text">Ophi</span>
-        <span className="text-[10px] bg-duke-50 text-duke font-semibold px-2 py-0.5 rounded-full">
-          Python &rarr; Alteryx
-        </span>
       </div>
       <button
         onClick={handleHelp}
