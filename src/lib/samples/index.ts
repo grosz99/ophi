@@ -127,6 +127,67 @@ result = (
 result.to_csv("merchant_summary.csv", index=False)`,
   },
 
+  polars: {
+    label: 'Polars',
+    code: `import polars as pl
+
+# Load the data
+df = pl.read_csv("events.csv")
+
+# Filter to high-value purchases
+df = df.filter(pl.col("amount") > 500)
+
+# Drop rows with null user IDs
+df = df.drop_nulls(subset=["user_id"])
+
+# Fill missing regions with "Unknown"
+df = df.fill_null({"region": "Unknown"})
+
+# Add calculated columns
+df = df.with_columns(
+    (pl.col("amount") * 0.08).alias("tax"),
+    (pl.col("amount") * 1.08).alias("total"),
+    pl.col("name").str.to_uppercase().alias("name_upper"),
+    pl.col("event_date").str.to_date("%Y-%m-%d").alias("date"),
+)
+
+# Type conversion
+df = df.with_columns(pl.col("zip_code").cast(pl.Utf8))
+
+# Select only needed columns
+df = df.select(["user_id", "region", "amount", "total", "date"])
+
+# Sort by total descending
+df = df.sort("total", descending=True)
+
+# Remove duplicate users
+df = df.unique(subset=["user_id"])
+
+# Group by region
+summary = df.group_by("region").agg(
+    pl.col("total").sum().alias("revenue"),
+    pl.col("user_id").count().alias("order_count"),
+    pl.col("amount").mean().alias("avg_order"),
+)
+
+# Join with a lookup table
+regions = pl.read_csv("region_lookup.csv")
+summary = summary.join(regions, on="region", how="left")
+
+# Unpivot for long format
+long = summary.unpivot(
+    index=["region"],
+    on=["revenue", "order_count"],
+)
+
+# Combine with another dataset
+other = pl.read_csv("other_metrics.csv")
+combined = pl.concat([summary, other])
+
+# Export
+combined.write_csv("regional_report.csv")`,
+  },
+
   notebook: {
     label: 'Notebook Style',
     code: `# Cell 1: Setup
