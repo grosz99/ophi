@@ -50,11 +50,12 @@ function TranslateButton({ dividerRef }: { dividerRef: React.RefObject<HTMLDivEl
       onClick={handleTranslate}
       disabled={!canTranslate}
       title="Translate Python to Alteryx workflow"
-      className={`fixed w-10 h-10 rounded-full flex items-center justify-center
+      className={`fixed flex items-center gap-2 px-4 py-2 rounded-full
         bg-duke-gradient text-white shadow-md border-[3px] border-white
+        text-[11px] font-bold uppercase tracking-wide
         transition-all duration-200
         ${canTranslate
-          ? 'hover:shadow-lg hover:scale-110 cursor-pointer'
+          ? 'hover:shadow-lg hover:scale-105 cursor-pointer'
           : 'opacity-30 cursor-not-allowed'
         }`}
       style={{
@@ -64,7 +65,8 @@ function TranslateButton({ dividerRef }: { dividerRef: React.RefObject<HTMLDivEl
         zIndex: 9999,
       }}
     >
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+      Transform Code
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
         <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
     </button>
