@@ -1,4 +1,3 @@
-import { useRef, useEffect, useState } from 'react'
 import { TranslatorProvider, useTranslator, useTranslatorDispatch } from '@/context/TranslatorContext'
 import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
@@ -8,27 +7,11 @@ import { Toast, showToast } from '@/components/ui/Toast'
 import { OnboardingTutorial } from '@/components/ui/OnboardingTutorial'
 import { parseCode } from '@/lib/parser'
 
-function TranslateButton({ dividerRef }: { dividerRef: React.RefObject<HTMLDivElement | null> }) {
+function Divider() {
   const state = useTranslator()
   const dispatch = useTranslatorDispatch()
-  const [pos, setPos] = useState<{ left: number; top: number } | null>(null)
 
   const canTranslate = state.code.trim().length > 0 && !state.isAnalyzing
-
-  useEffect(() => {
-    function updatePos() {
-      const el = dividerRef.current
-      if (!el) return
-      const rect = el.getBoundingClientRect()
-      setPos({
-        left: rect.left + rect.width / 2,
-        top: rect.top + rect.height * 0.35,
-      })
-    }
-    updatePos()
-    window.addEventListener('resize', updatePos)
-    return () => window.removeEventListener('resize', updatePos)
-  }, [dividerRef])
 
   function handleTranslate() {
     if (!canTranslate) return
@@ -43,50 +26,41 @@ function TranslateButton({ dividerRef }: { dividerRef: React.RefObject<HTMLDivEl
     showToast(`Detected ${steps.length} transformation steps`)
   }
 
-  if (!pos) return null
-
   return (
-    <button
-      onClick={handleTranslate}
-      disabled={!canTranslate}
-      title="Translate Python to Alteryx workflow"
-      className={`fixed flex items-center gap-2 px-4 py-2 rounded-full
-        bg-duke-gradient text-white shadow-md border-[3px] border-white
-        text-[11px] font-bold uppercase tracking-wide
-        transition-all duration-200
-        ${canTranslate
-          ? 'hover:shadow-lg hover:scale-105 cursor-pointer'
-          : 'opacity-30 cursor-not-allowed'
-        }`}
-      style={{
-        left: pos.left,
-        top: pos.top,
-        transform: 'translate(-50%, -50%)',
-        zIndex: 9999,
-      }}
-    >
-      Transform Code
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-        <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-    </button>
+    <div className="flex flex-col items-center justify-center shrink-0 bg-surface-alt border-x border-border px-1">
+      <button
+        onClick={handleTranslate}
+        disabled={!canTranslate}
+        title="Translate Python to Alteryx workflow"
+        className={`flex items-center gap-1.5 px-3 py-2 rounded-full
+          bg-duke-gradient text-white shadow-md
+          text-[10px] font-bold uppercase tracking-wide whitespace-nowrap
+          transition-all duration-200
+          ${canTranslate
+            ? 'hover:shadow-lg hover:scale-105 cursor-pointer'
+            : 'opacity-30 cursor-not-allowed'
+          }`}
+      >
+        Transform
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+          <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </button>
+    </div>
   )
 }
 
 function AppContent() {
-  const dividerRef = useRef<HTMLDivElement>(null)
-
   return (
     <>
       <Header />
       <div className="flex flex-1 overflow-hidden">
         <CodeInputPanel />
-        <div ref={dividerRef} className="w-px bg-border shrink-0" />
+        <Divider />
         <OutputPanel />
       </div>
       <Footer />
       <Toast />
-      <TranslateButton dividerRef={dividerRef} />
       <OnboardingTutorial />
     </>
   )
