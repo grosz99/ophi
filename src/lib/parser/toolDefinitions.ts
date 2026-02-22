@@ -1,0 +1,25 @@
+import type { ToolKey, ToolDefinition } from '@/types'
+
+export const TOOLS: Record<ToolKey, ToolDefinition> = {
+  input_data:   { name: 'Input Data',        icon: 'IN',  cat: 'input',     color: '#4AB47B' },
+  output_data:  { name: 'Output Data',       icon: 'OUT', cat: 'output',    color: '#4AB47B' },
+  filter:       { name: 'Filter',            icon: 'F',   cat: 'prep',      color: '#4A90D9' },
+  formula:      { name: 'Formula',           icon: 'fx',  cat: 'prep',      color: '#4A90D9' },
+  select:       { name: 'Select',            icon: 'S',   cat: 'prep',      color: '#4A90D9' },
+  sort:         { name: 'Sort',              icon: 'SRT', cat: 'prep',      color: '#4A90D9' },
+  unique:       { name: 'Unique',            icon: 'U',   cat: 'prep',      color: '#4A90D9' },
+  sample:       { name: 'Sample',            icon: '%',   cat: 'prep',      color: '#4A90D9' },
+  cleanse:      { name: 'Data Cleansing',    icon: 'C',   cat: 'prep',      color: '#4A90D9' },
+  impute:       { name: 'Imputation',        icon: 'IMP', cat: 'prep',      color: '#4A90D9' },
+  summarize:    { name: 'Summarize',         icon: 'SUM', cat: 'transform', color: '#E8943A' },
+  crosstab:     { name: 'Cross Tab',         icon: 'CT',  cat: 'transform', color: '#E8943A' },
+  transpose:    { name: 'Transpose',         icon: 'T',   cat: 'transform', color: '#E8943A' },
+  join:         { name: 'Join',              icon: 'J',   cat: 'join',      color: '#7c3aed' },
+  union:        { name: 'Union',             icon: 'UN',  cat: 'join',      color: '#7c3aed' },
+  text_to_cols: { name: 'Text to Columns',   icon: 'TTC', cat: 'parse',     color: '#059669' },
+  regex:        { name: 'RegEx',             icon: 'RX',  cat: 'parse',     color: '#059669' },
+  datetime:     { name: 'DateTime',          icon: 'DT',  cat: 'parse',     color: '#059669' },
+  multi_row:    { name: 'Multi-Row Formula', icon: 'MR',  cat: 'transform', color: '#E8943A' },
+  browse:       { name: 'Browse',            icon: 'BR',  cat: 'input',     color: '#4AB47B' },
+  type_convert: { name: 'Select (Type)',     icon: 'TY',  cat: 'prep',      color: '#4A90D9' },
+}
