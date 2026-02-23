@@ -38,5 +38,12 @@ pnpm-debug.log*
 # Netlify
 .netlify/
 
+# Screenshots (Playwright)
+screenshots/
+
+# Playwright
+test-results/
+playwright-report/
+
 # Claude Code
 .claude/

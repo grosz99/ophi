@@ -12,7 +12,7 @@ interface TutorialStep {
 const STEPS: TutorialStep[] = [
   {
     title: 'Welcome to Ophi',
-    description: 'Ophi translates your Python pandas code into Alteryx workflow visualizations. See exactly how each line maps to an Alteryx tool.',
+    description: 'Ophi translates your Python pandas and Polars code into Alteryx and Excel data transformations. See exactly how each line maps to a tool you already know.',
     stepNum: '',
     position: 'center',
   },
@@ -24,19 +24,19 @@ const STEPS: TutorialStep[] = [
   },
   {
     title: 'Click Translate',
-    description: 'Hit the blue arrow button between the panels. Ophi parses each pandas operation and maps it to the closest Alteryx tool.',
+    description: 'Hit the blue arrow button between the panels. Ophi parses each pandas and Polars operation and maps it to the closest Alteryx tool or Excel equivalent.',
     stepNum: '02',
     position: 'center',
   },
   {
     title: 'Explore the Workflow',
-    description: 'The right panel shows your code as a connected Alteryx workflow. Click any node to see details about the tool mapping.',
+    description: 'The right panel shows your code as a connected Alteryx workflow. Click any node to see details, and toggle between Alteryx and Excel views.',
     stepNum: '03',
     position: 'right',
   },
   {
     title: 'Switch Views',
-    description: 'Use the tabs to see a Cheat Sheet summary, smart Recommendations, or your original code with Alteryx annotations inline.',
+    description: 'Use the tabs to see a Cheat Sheet summary, smart Recommendations, or your original code with Alteryx or Excel annotations inline.',
     stepNum: '04',
     position: 'right',
   },
