@@ -1,5 +1,6 @@
 import type { ViewTab } from '@/types'
 import { useTranslator, useTranslatorDispatch } from '@/context/TranslatorContext'
+import { exportToPptx } from '@/lib/exportPptx'
 import clsx from 'clsx'
 
 const TABS: { key: ViewTab; label: string }[] = [
@@ -10,7 +11,7 @@ const TABS: { key: ViewTab; label: string }[] = [
 ]
 
 export function ViewTabs() {
-  const { activeTab } = useTranslator()
+  const { activeTab, steps, terminology } = useTranslator()
   const dispatch = useTranslatorDispatch()
 
   return (
@@ -29,6 +30,14 @@ export function ViewTabs() {
           {tab.label}
         </button>
       ))}
+      {steps.length > 0 && (
+        <button
+          onClick={() => exportToPptx(steps, terminology)}
+          className="ml-auto mr-3 self-center text-[10px] font-bold uppercase tracking-wide text-duke border border-duke px-2.5 py-0.5 rounded hover:bg-duke hover:text-white transition-colors cursor-pointer"
+        >
+          Export PPT
+        </button>
+      )}
     </div>
   )
 }

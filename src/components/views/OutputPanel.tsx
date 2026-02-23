@@ -6,7 +6,6 @@ import { EmptyState } from '@/components/workflow/EmptyState'
 import { CheatSheetView } from './CheatSheetView'
 import { RecommendationsView } from './RecommendationsView'
 import { AnnotatedCodeView } from './AnnotatedCodeView'
-import { exportToPptx } from '@/lib/exportPptx'
 
 export function OutputPanel() {
   const { steps, selectedStep, activeTab, terminology } = useTranslator()
@@ -33,9 +32,9 @@ export function OutputPanel() {
   return (
     <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
       {/* Header — editorial style */}
-      <div className="flex items-center gap-2.5 px-4 py-2 border-b-2 border-text-primary bg-white shrink-0">
-        <h3 className="text-sm font-black uppercase tracking-wide flex-1">Explain To Me</h3>
-        {/* Alteryx / Excel toggle */}
+      <div className="flex items-center gap-2 px-4 py-2 border-b-2 border-text-primary bg-white shrink-0">
+        <h3 className="text-sm font-black uppercase tracking-wide">Explain To Me</h3>
+        {/* Alteryx / Excel toggle — tight to title */}
         <div className="flex bg-surface-alt rounded overflow-hidden border border-border">
           <button
             onClick={() => dispatch({ type: 'SET_TERMINOLOGY', payload: 'alteryx' })}
@@ -54,14 +53,7 @@ export function OutputPanel() {
             Excel
           </button>
         </div>
-        {steps.length > 0 && (
-          <button
-            onClick={() => exportToPptx(steps, terminology)}
-            className="text-[10px] font-bold uppercase tracking-wide text-text-muted hover:text-duke transition-colors cursor-pointer"
-          >
-            Export PPT
-          </button>
-        )}
+        <div className="flex-1" />
         {steps.length > 0 && (
           <span className="text-[10px] font-black tracking-widest text-white bg-duke px-2 py-0.5">
             {steps.length} STEPS

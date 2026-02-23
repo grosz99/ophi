@@ -1,9 +1,10 @@
 import { useRef } from 'react'
-import { useTranslatorDispatch } from '@/context/TranslatorContext'
+import { useTranslator, useTranslatorDispatch } from '@/context/TranslatorContext'
 import { validateAndReadFile } from '@/lib/security/validation'
 import { showToast } from '@/components/ui/Toast'
 
 export function FileUpload() {
+  const { code } = useTranslator()
   const dispatch = useTranslatorDispatch()
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -23,6 +24,10 @@ export function FileUpload() {
     e.target.value = ''
   }
 
+  function handleClear() {
+    dispatch({ type: 'RESET' })
+  }
+
   return (
     <div className="flex items-center gap-2 px-4 py-2 border-b border-border text-xs text-text-muted shrink-0">
       <button
@@ -39,6 +44,14 @@ export function FileUpload() {
         className="hidden"
       />
       <span>or paste code above</span>
+      {code.trim().length > 0 && (
+        <button
+          onClick={handleClear}
+          className="ml-auto text-[10px] font-bold uppercase tracking-wide text-red-500 border border-red-300 px-2.5 py-0.5 rounded hover:bg-red-50 hover:text-red-700 transition-colors cursor-pointer"
+        >
+          Clear
+        </button>
+      )}
     </div>
   )
 }
