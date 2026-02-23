@@ -19,7 +19,7 @@ const catLabel: Record<string, string> = {
 }
 
 export function WorkflowNode({ step, index, onClick, selected }: Props) {
-  const { toolName } = useStepLabel(step)
+  const { headline, toolName } = useStepLabel(step)
 
   return (
     <div
@@ -48,7 +48,7 @@ export function WorkflowNode({ step, index, onClick, selected }: Props) {
         </div>
 
         {/* Row 2: headline — tool name */}
-        <h3 className="text-base font-black text-text-primary leading-tight mb-1">{step.tool}</h3>
+        <h3 className="text-base font-black text-text-primary leading-tight mb-1">{headline}</h3>
 
         {/* Row 3: explanation */}
         <div

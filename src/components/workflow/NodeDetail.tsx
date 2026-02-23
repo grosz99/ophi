@@ -18,7 +18,7 @@ const catLabel: Record<string, string> = {
 
 export function NodeDetail({ step }: Props) {
   const dispatch = useTranslatorDispatch()
-  const { toolName, toolDetail } = useStepLabel(step)
+  const { headline, toolName, toolDetail } = useStepLabel(step)
   const termLabel = useTermLabel()
 
   return (
@@ -42,7 +42,7 @@ export function NodeDetail({ step }: Props) {
           <span className="text-[10px] text-text-muted font-semibold">Line {step.line}</span>
         </div>
 
-        <h1 className="text-2xl font-black text-text-primary leading-tight mb-2">{step.tool}</h1>
+        <h1 className="text-2xl font-black text-text-primary leading-tight mb-2">{headline}</h1>
 
         <div
           className="text-sm text-text-secondary leading-relaxed"
