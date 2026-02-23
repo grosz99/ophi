@@ -29,6 +29,7 @@ export interface ParsedStep {
 
 export type ViewTab = 'workflow' | 'cheatsheet' | 'recommendations' | 'annotated'
 export type AnalysisMode = 'regex' | 'claude'
+export type Terminology = 'alteryx' | 'excel'
 
 export interface TranslatorState {
   code: string
@@ -39,6 +40,7 @@ export interface TranslatorState {
   analysisMode: AnalysisMode
   isAnalyzing: boolean
   analysisError: string | null
+  terminology: Terminology
 }
 
 export type TranslatorAction =
@@ -51,4 +53,5 @@ export type TranslatorAction =
   | { type: 'SET_ANALYZING'; payload: boolean }
   | { type: 'SET_ERROR'; payload: string | null }
   | { type: 'TRANSLATE'; payload: { steps: ParsedStep[]; highlightedLines: number[] } }
+  | { type: 'SET_TERMINOLOGY'; payload: Terminology }
   | { type: 'RESET' }

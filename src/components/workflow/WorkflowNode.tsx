@@ -1,5 +1,6 @@
 import type { ParsedStep } from '@/types'
 import { sanitizeHTML } from '@/lib/security/sanitize'
+import { useStepLabel } from '@/lib/useTerminology'
 
 interface Props {
   step: ParsedStep
@@ -18,6 +19,8 @@ const catLabel: Record<string, string> = {
 }
 
 export function WorkflowNode({ step, index, onClick, selected }: Props) {
+  const { toolName } = useStepLabel(step)
+
   return (
     <div
       onClick={onClick}
@@ -40,7 +43,7 @@ export function WorkflowNode({ step, index, onClick, selected }: Props) {
           </span>
           <span className="text-[10px] text-text-muted font-semibold">Step {index + 1}</span>
           <span className="ml-auto text-[10px] font-bold text-text-muted">
-            {step.alteryxTool}
+            {toolName}
           </span>
         </div>
 

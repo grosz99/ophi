@@ -10,6 +10,7 @@ const initialState: TranslatorState = {
   analysisMode: 'regex',
   isAnalyzing: false,
   analysisError: null,
+  terminology: 'alteryx',
 }
 
 function reducer(state: TranslatorState, action: TranslatorAction): TranslatorState {
@@ -38,6 +39,8 @@ function reducer(state: TranslatorState, action: TranslatorAction): TranslatorSt
         selectedStep: -1,
         analysisError: null,
       }
+    case 'SET_TERMINOLOGY':
+      return { ...state, terminology: action.payload }
     case 'RESET':
       return initialState
     default:

@@ -5,6 +5,7 @@ export interface Recommendation {
   title: string
   description: string
   relatedStep?: number // index into steps array
+  fix?: (code: string) => string // returns modified code, if auto-fixable
 }
 
 /**
@@ -20,10 +21,14 @@ export function generateRecommendations(code: string, steps: ParsedStep[]): Reco
   // Check for missing output
   const hasOutput = steps.some(s => s.toolKey === 'output_data')
   if (!hasOutput) {
+    // Find the last assigned variable name
+    const lastAssign = code.match(/^(\w+)\s*=/gm)
+    const lastVar = lastAssign ? lastAssign[lastAssign.length - 1].replace(/\s*=.*/, '') : 'df'
     recs.push({
       severity: 'info',
       title: 'No output step detected',
       description: 'This script doesn\'t write results to a file. Consider adding a .to_csv() or .to_excel() call so results can be shared or loaded into downstream tools.',
+      fix: (c) => c.trimEnd() + `\n\n# Export results\n${lastVar}.to_csv("output.csv", index=False)\n`,
     })
   }
 
@@ -58,6 +63,7 @@ export function generateRecommendations(code: string, steps: ParsedStep[]): Reco
       title: 'dropna() without subset may remove too many rows',
       description: 'Using .dropna() without specifying a subset= parameter drops any row with ANY missing value across all columns. This can silently remove valid data. Specify which columns matter: df.dropna(subset=["col1", "col2"]).',
       relatedStep: steps.indexOf(broadDropna),
+      fix: (c) => c.replace('.dropna()', '.dropna(subset=["column_name"])'),
     })
   }
 
@@ -111,11 +117,20 @@ export function generateRecommendations(code: string, steps: ParsedStep[]): Reco
   if (joinIdx >= 0) {
     const hasUniqueBeforeJoin = steps.some((s, i) => s.toolKey === 'unique' && i < joinIdx)
     if (!hasUniqueBeforeJoin) {
+      const joinStep = steps[joinIdx]
       recs.push({
         severity: 'info',
         title: 'Consider deduplicating before joins',
         description: 'Joining on columns with duplicate values can create unexpected row multiplication. If your join key should be unique, add a .drop_duplicates() step before the merge.',
         relatedStep: joinIdx,
+        fix: (c) => {
+          const joinLine = joinStep.code
+          const indent = joinLine.match(/^\s*/)?.[0] || ''
+          // Try to extract the join key from on="..." or on='...'
+          const onMatch = joinLine.match(/on\s*=\s*["'](\w+)["']/)
+          const key = onMatch ? onMatch[1] : 'key_column'
+          return c.replace(joinLine, `${indent}# Deduplicate before join\n${indent}df = df.drop_duplicates(subset=["${key}"])\n${joinLine}`)
+        },
       })
     }
   }

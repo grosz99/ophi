@@ -1,6 +1,7 @@
 import type { ParsedStep } from '@/types'
 import { useTranslatorDispatch } from '@/context/TranslatorContext'
 import { sanitizeHTML } from '@/lib/security/sanitize'
+import { useStepLabel, useTermLabel } from '@/lib/useTerminology'
 
 interface Props {
   step: ParsedStep
@@ -17,6 +18,8 @@ const catLabel: Record<string, string> = {
 
 export function NodeDetail({ step }: Props) {
   const dispatch = useTranslatorDispatch()
+  const { toolName, toolDetail } = useStepLabel(step)
+  const termLabel = useTermLabel()
 
   return (
     <div className="overflow-y-auto">
@@ -49,15 +52,15 @@ export function NodeDetail({ step }: Props) {
 
       {/* Alteryx equivalent */}
       <div className="px-5 py-4 border-b border-border">
-        <h4 className="text-[9px] font-black tracking-widest text-text-muted uppercase mb-2">Alteryx Equivalent</h4>
+        <h4 className="text-[9px] font-black tracking-widest text-text-muted uppercase mb-2">{termLabel} Equivalent</h4>
         <div className="flex items-center gap-3">
           <span
             className="text-xs font-black text-white px-2.5 py-1"
             style={{ backgroundColor: step.color }}
           >
-            {step.alteryxTool}
+            {toolName}
           </span>
-          <span className="text-sm text-text-secondary">{step.alteryxDetail}</span>
+          <span className="text-sm text-text-secondary">{toolDetail}</span>
         </div>
       </div>
 

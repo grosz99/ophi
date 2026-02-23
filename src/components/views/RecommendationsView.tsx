@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
-import { useTranslator } from '@/context/TranslatorContext'
+import { useTranslator, useTranslatorDispatch } from '@/context/TranslatorContext'
 import { generateRecommendations, type Recommendation } from '@/lib/generators/recommendationsGenerator'
+import { showToast } from '@/components/ui/Toast'
 
 const severityConfig: Record<Recommendation['severity'], { accent: string; tag: string; tagBg: string }> = {
   warning: { accent: '#dc2626', tag: 'ALERT', tagBg: 'bg-red-600' },
@@ -10,7 +11,14 @@ const severityConfig: Record<Recommendation['severity'], { accent: string; tag: 
 
 export function RecommendationsView() {
   const { code, steps } = useTranslator()
+  const dispatch = useTranslatorDispatch()
   const recommendations = useMemo(() => generateRecommendations(code, steps), [code, steps])
+
+  function handleApply(fix: (code: string) => string) {
+    const fixed = fix(code)
+    dispatch({ type: 'SET_CODE', payload: fixed })
+    showToast('Fix applied to code')
+  }
 
   if (recommendations.length === 0) {
     return (
@@ -46,11 +54,21 @@ export function RecommendationsView() {
           </span>
           <h2 className="text-xl font-black text-text-primary leading-tight mb-2">{lead.title}</h2>
           <p className="text-sm text-text-secondary leading-relaxed">{lead.description}</p>
-          {lead.relatedStep !== undefined && (
-            <p className="text-xs text-text-muted mt-2 font-semibold uppercase tracking-wide">
-              Step {lead.relatedStep + 1} &middot; {steps[lead.relatedStep]?.tool}
-            </p>
-          )}
+          <div className="flex items-center gap-3 mt-2">
+            {lead.relatedStep !== undefined && (
+              <p className="text-xs text-text-muted font-semibold uppercase tracking-wide">
+                Step {lead.relatedStep + 1} &middot; {steps[lead.relatedStep]?.tool}
+              </p>
+            )}
+            {lead.fix && (
+              <button
+                onClick={() => handleApply(lead.fix!)}
+                className="ml-auto text-[10px] font-bold uppercase tracking-wide bg-duke text-white px-3 py-1 hover:bg-duke/80 transition-colors cursor-pointer"
+              >
+                Apply Fix
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Remaining items — stacked headlines */}
@@ -75,6 +93,14 @@ export function RecommendationsView() {
                 </div>
                 <h3 className="text-sm font-bold text-text-primary leading-snug mb-0.5">{rec.title}</h3>
                 <p className="text-xs text-text-secondary leading-relaxed">{rec.description}</p>
+                {rec.fix && (
+                  <button
+                    onClick={() => handleApply(rec.fix!)}
+                    className="mt-1.5 text-[9px] font-bold uppercase tracking-wide bg-duke text-white px-2.5 py-0.5 hover:bg-duke/80 transition-colors cursor-pointer"
+                  >
+                    Apply Fix
+                  </button>
+                )}
               </div>
             </div>
           )

@@ -1,13 +1,20 @@
 import { useTranslator } from '@/context/TranslatorContext'
 import { stripHTML } from '@/lib/security/sanitize'
 import { showToast } from '@/components/ui/Toast'
+import { EXCEL_MAPPINGS } from '@/lib/parser/excelMappings'
+import { useTermLabel } from '@/lib/useTerminology'
 
 export function CheatSheetView() {
-  const { steps } = useTranslator()
+  const { steps, terminology } = useTranslator()
+  const termLabel = useTermLabel()
+
+  function getToolName(step: typeof steps[0]) {
+    return terminology === 'excel' ? EXCEL_MAPPINGS[step.toolKey].tool : step.alteryxTool
+  }
 
   function handleCopy() {
     const text = steps.map((s, i) =>
-      `Step ${i + 1}: ${s.code}\n  Alteryx: ${s.alteryxTool} — ${stripHTML(s.explain)}\n`
+      `Step ${i + 1}: ${s.code}\n  ${termLabel}: ${getToolName(s)} — ${stripHTML(s.explain)}\n`
     ).join('\n')
     navigator.clipboard.writeText(text).then(() => showToast('Cheat sheet copied!'))
   }
@@ -32,7 +39,7 @@ export function CheatSheetView() {
         <span>#</span>
         <span>Python</span>
         <span />
-        <span>Alteryx</span>
+        <span>{termLabel}</span>
       </div>
 
       {/* Rows */}
@@ -53,10 +60,10 @@ export function CheatSheetView() {
             {/* Arrow */}
             <span className="text-text-muted text-xs font-bold text-center">&rarr;</span>
 
-            {/* Alteryx mapping */}
+            {/* Tool mapping */}
             <div className="min-w-0">
               <span className="text-sm font-black leading-tight block" style={{ color: step.color }}>
-                {step.alteryxTool}
+                {getToolName(step)}
               </span>
               <p className="text-[11px] text-text-muted leading-snug mt-0.5">
                 {stripHTML(step.explain).substring(0, 70)}

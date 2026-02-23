@@ -2,11 +2,13 @@ import { useMemo } from 'react'
 import { useTranslator } from '@/context/TranslatorContext'
 import { generateAnnotatedCode } from '@/lib/generators'
 import { showToast } from '@/components/ui/Toast'
+import { useTermLabel } from '@/lib/useTerminology'
 
 export function AnnotatedCodeView() {
-  const { code, steps } = useTranslator()
+  const { code, steps, terminology } = useTranslator()
+  const termLabel = useTermLabel()
 
-  const annotated = useMemo(() => generateAnnotatedCode(code, steps), [code, steps])
+  const annotated = useMemo(() => generateAnnotatedCode(code, steps, terminology), [code, steps, terminology])
 
   function handleCopy() {
     navigator.clipboard.writeText(annotated).then(() => showToast('Annotated code copied!'))
@@ -18,7 +20,7 @@ export function AnnotatedCodeView() {
       <div className="bg-duke text-white px-4 py-1.5 flex items-center gap-2 shrink-0">
         <span className="text-[10px] font-black tracking-widest uppercase opacity-70">Source</span>
         <span className="w-px h-3 bg-white/30" />
-        <span className="text-[11px] font-semibold">Code with inline Alteryx annotations</span>
+        <span className="text-[11px] font-semibold">Code with inline {termLabel} annotations</span>
         <button
           onClick={handleCopy}
           className="ml-auto text-[10px] font-bold uppercase tracking-wide bg-white/15 hover:bg-white/25 px-2.5 py-0.5 transition-colors cursor-pointer"
