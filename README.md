@@ -1,6 +1,6 @@
-# Ophi — Python to Alteryx Translator
+# Ophi — Python Translator for Excel and Alteryx Users
 
-Ophi is a web app that translates Python pandas code into visual Alteryx workflow breakdowns. Paste or upload your Python code and instantly see which Alteryx Designer tools correspond to each pandas operation, complete with a visual workflow canvas, a cheat sheet, recommendations, and annotated code view.
+Ophi is a web app that translates Python pandas code into visual Alteryx workflow breakdowns. Paste or upload your Python code and instantly see which Alteryx Designer tools and Excel funcation correspond to each pandas/polars operation, complete with a visual workflow canvas, a cheat sheet, recommendations, and annotated code view.
 
 **Live app:** [ophi-ai.netlify.app](https://ophi-ai.netlify.app)
 
