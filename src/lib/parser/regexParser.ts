@@ -26,12 +26,39 @@ function makeStep(
 }
 
 export function parseCode(code: string): ParsedStep[] {
-  const lines = code.split('\n')
+  const rawLines = code.split('\n')
+
+  // Join multi-line method chains into single logical lines.
+  // A line is a continuation if it starts with '.' or ends with '(' or ','
+  // while the next line starts with '.' or is an argument continuation.
+  const joinedLines: Array<{ code: string; lineNum: number }> = []
+  let i = 0
+  while (i < rawLines.length) {
+    const trimmed = rawLines[i].trim()
+    if (!trimmed) { i++; continue }
+    let combined = trimmed
+    const startLine = i + 1
+    // Keep consuming lines that look like continuations
+    while (i + 1 < rawLines.length) {
+      const next = rawLines[i + 1].trim()
+      if (!next) { i++; break }
+      const currentEndsOpen = /[,(\\]$/.test(combined) || combined.endsWith('\\')
+      const nextIsContinuation = next.startsWith('.') || next.startsWith(')') || next.startsWith(']')
+      if (currentEndsOpen || nextIsContinuation) {
+        combined += ' ' + next
+        i++
+      } else {
+        break
+      }
+    }
+    joinedLines.push({ code: combined, lineNum: startLine })
+    i++
+  }
+
   const steps: ParsedStep[] = []
 
-  lines.forEach((rawLine, lineIdx) => {
+  joinedLines.forEach(({ code: rawLine, lineNum }) => {
     const line = rawLine.trim()
-    const lineNum = lineIdx + 1
     if (!line || line.startsWith('#') || line.startsWith('import ') || line.startsWith('from ') || line.startsWith('print(') || line.startsWith('print ')) return
 
     // Skip pure exploration calls (pandas & polars)
@@ -133,7 +160,7 @@ export function parseCode(code: string): ParsedStep[] {
     // pandas: .dropna() / polars: .drop_nulls()
     if (line.includes('.dropna(') || line.includes('.drop_nulls(')) {
       const subsetMatch = line.match(/subset\s*=\s*\[(.+?)\]/)
-      const cols = subsetMatch ? subsetMatch[1] : 'all columns'
+      const cols = subsetMatch ? subsetMatch[1].replace(/["']/g, '') : 'all columns'
       steps.push(makeStep('filter', line, lineNum,
         `Remove rows with missing (null/NaN) values${subsetMatch ? ` in columns: <strong>${cols}</strong>` : ''}.`,
         'Filter', 'Removes rows with null values.'
@@ -141,10 +168,16 @@ export function parseCode(code: string): ParsedStep[] {
       return
     }
     // pandas: .fillna() / polars: .fill_null()
-    if ((m = line.match(/\.(?:fillna|fill_null)\(\s*(.+?)\s*\)/))) {
-      steps.push(makeStep('impute', line, lineNum,
-        `Replace missing (null) values with <strong>${m[1]}</strong>.`,
-        'Imputation', `Fills nulls with ${m[1]}.`
+    if (line.includes('.fillna(') || line.includes('.fill_null(')) {
+      // Extract the fill value — first argument before any keyword args
+      const fillMatch = line.match(/\.(?:fillna|fill_null)\(\s*([^,)]+)/)
+      const fillVal = fillMatch ? fillMatch[1].trim() : 'a value'
+      const method = line.match(/method\s*=\s*["'](\w+)["']/)
+      const desc = method
+        ? `Fill missing values using method: <strong>${method[1]}</strong>.`
+        : `Replace missing (null) values with <strong>${fillVal}</strong>.`
+      steps.push(makeStep('impute', line, lineNum, desc,
+        'Imputation', method ? `Fill method: ${method[1]}.` : `Fills nulls with ${fillVal}.`
       ))
       return
     }
@@ -170,10 +203,20 @@ export function parseCode(code: string): ParsedStep[] {
       ))
       return
     }
-    if ((m = line.match(/\.assign\(\s*(\w+)\s*=\s*(.+?)\s*[,)]/))) {
+    if (line.includes('.assign(')) {
+      // Extract all keyword argument names (each is a new column)
+      const assignCols: string[] = []
+      const assignRe = /(\w+)\s*=/g
+      // Skip the object before .assign( itself
+      const assignBody = line.replace(/^.*?\.assign\(/, '')
+      let am: RegExpExecArray | null
+      while ((am = assignRe.exec(assignBody)) !== null) {
+        if (am[1] !== 'lambda') assignCols.push(am[1])
+      }
+      const colList = assignCols.length > 0 ? assignCols.join(', ') : 'new columns'
       steps.push(makeStep('formula', line, lineNum,
-        `Create a new column <strong>${m[1]}</strong> using: <code>${m[2].trim()}</code>.`,
-        'Formula', `Creates column "${m[1]}".`
+        `Create new column${assignCols.length > 1 ? 's' : ''}: <strong>${colList}</strong>.`,
+        'Formula', `Creates column${assignCols.length > 1 ? 's' : ''}: ${colList}.`
       ))
       return
     }
@@ -303,19 +346,24 @@ export function parseCode(code: string): ParsedStep[] {
 
     // ==================== SORT ====================
     // pandas: .sort_values() / polars: .sort()
-    if ((m = line.match(/\.sort_values\(\s*["']?(\w+)["']?/))) {
+    if (line.includes('.sort_values(')) {
       const desc = line.includes('ascending=False') || line.includes('ascending = False')
+      // Handle by='col', by=['col1','col2'], or positional first arg
+      const byMatch = line.match(/by\s*=\s*\[([^\]]+)\]/) || line.match(/by\s*=\s*["'](\w+)["']/) || line.match(/\.sort_values\(\s*["'](\w+)["']/) || line.match(/\.sort_values\(\s*\[([^\]]+)\]/)
+      const cols = byMatch ? byMatch[1].replace(/["']/g, '') : 'column'
       steps.push(makeStep('sort', line, lineNum,
-        `Sort the data by <strong>${m[1]}</strong> in <strong>${desc ? 'descending' : 'ascending'}</strong> order.`,
-        'Sort', `By "${m[1]}", ${desc ? 'descending' : 'ascending'}.`
+        `Sort the data by <strong>${cols}</strong> in <strong>${desc ? 'descending' : 'ascending'}</strong> order.`,
+        'Sort', `By "${cols}", ${desc ? 'descending' : 'ascending'}.`
       ))
       return
     }
-    if ((m = line.match(/\.sort\(\s*["'](\w+)["']/)) && !line.includes('.sort_values')) {
+    if (line.includes('.sort(') && !line.includes('.sort_values')) {
       const desc = line.includes('descending=True') || line.includes('descending = True')
+      const byMatch = line.match(/\.sort\(\s*\[([^\]]+)\]/) || line.match(/\.sort\(\s*["'](\w+)["']/)
+      const cols = byMatch ? byMatch[1].replace(/["']/g, '') : 'column'
       steps.push(makeStep('sort', line, lineNum,
-        `Sort the data by <strong>${m[1]}</strong> in <strong>${desc ? 'descending' : 'ascending'}</strong> order.`,
-        'Sort', `By "${m[1]}", ${desc ? 'descending' : 'ascending'}.`
+        `Sort the data by <strong>${cols}</strong> in <strong>${desc ? 'descending' : 'ascending'}</strong> order.`,
+        'Sort', `By "${cols}", ${desc ? 'descending' : 'ascending'}.`
       ))
       return
     }
@@ -353,30 +401,46 @@ export function parseCode(code: string): ParsedStep[] {
     // ==================== SUMMARIZE / GROUPBY ====================
     // pandas: .groupby() / polars: .group_by()
     if ((line.includes('.groupby(') || line.includes('.group_by(')) &&
-        (line.includes('.agg(') || line.includes('.sum()') || line.includes('.mean()') || line.includes('.count()') || line.includes('.nunique()') || line.includes('.n_unique()'))) {
+        (line.includes('.agg(') || line.includes('.agg ') || line.includes('.sum()') || line.includes('.mean()') || line.includes('.count()') || line.includes('.nunique()') || line.includes('.n_unique()'))) {
       const grpMatch = line.match(/\.group(?:_)?by\(\s*\[?["']?(.+?)["']?\]?\s*\)/)
-      const groups = grpMatch ? grpMatch[1].replace(/["'\[\]]/g, '') : '?'
+      const groups = grpMatch ? grpMatch[1].replace(/["'\[\]]/g, '').trim() : '?'
+
+      // Collect named aggregations: name=pd.NamedAgg(...) or name=(col, func)
+      const namedAggs: string[] = []
+      const namedAggRe = /(\w+)\s*=\s*(?:pd\.NamedAgg\(\s*column\s*=\s*["'](\w+)["']\s*,\s*aggfunc\s*=\s*["']?(\w+)["']?\s*\)|\(\s*["'](\w+)["']\s*,\s*["']?(\w+)["']?\s*\))/g
+      let na: RegExpExecArray | null
+      while ((na = namedAggRe.exec(line)) !== null) {
+        const outCol = na[1]
+        const srcCol = na[2] || na[4]
+        const func = na[3] || na[5]
+        namedAggs.push(`${outCol} = ${func}(${srcCol})`)
+      }
+
       let aggDesc = 'aggregate'
-      if (line.includes('.sum()') || line.includes('.sum(')) aggDesc = 'sum'
-      else if (line.includes('.mean()') || line.includes('.mean(')) aggDesc = 'average'
-      else if (line.includes('.count()') || line.includes('.count(')) aggDesc = 'count'
-      else if (line.includes('.nunique()') || line.includes('.n_unique(')) aggDesc = 'count distinct'
+      if (line.includes('.sum()') || line.includes('"sum"') || line.includes("'sum'")) aggDesc = 'sum'
+      else if (line.includes('.mean()') || line.includes('"mean"') || line.includes("'mean'")) aggDesc = 'average'
+      else if (line.includes('.count()') || line.includes('"count"') || line.includes("'count'")) aggDesc = 'count'
+      else if (line.includes('.nunique()') || line.includes('.n_unique(') || line.includes('"nunique"') || line.includes("'nunique'")) aggDesc = 'count distinct'
+      else if (line.includes('"max"') || line.includes("'max'") || line.includes('.max()')) aggDesc = 'max'
+      else if (line.includes('"min"') || line.includes("'min'") || line.includes('.min()')) aggDesc = 'min'
+
+      const aggList = namedAggs.length > 0
+        ? `<strong>${namedAggs.join(', ')}</strong>`
+        : `<strong>${aggDesc}</strong>`
+
       steps.push(makeStep('summarize', line, lineNum,
-        `Group the data by <strong>${groups}</strong> and calculate the <strong>${aggDesc}</strong> of each group.`,
-        'Summarize', `Group by: ${groups}. Action: ${aggDesc}.`
+        `Group the data by <strong>${groups}</strong> and calculate ${aggList} for each group.`,
+        'Summarize', `Group by: ${groups}. Aggregations: ${namedAggs.length > 0 ? namedAggs.join('; ') : aggDesc}.`
       ))
       return
     }
-    // polars: .group_by().agg([...]) multi-line friendly
-    if ((line.includes('.groupby(') || line.includes('.group_by(')) && line.includes('.agg')) {
-      const grpMatch = line.match(/\.group(?:_)?by\(\s*\[?["']?(.+?)["']?\]?\s*\)/)
-      if (grpMatch) {
-        steps.push(makeStep('summarize', line, lineNum,
-          `Group the data by <strong>${grpMatch[1].replace(/["'\[\]]/g, '')}</strong> and aggregate.`,
-          'Summarize', `Group by: ${grpMatch[1].replace(/["'\[\]]/g, '')}.`
-        ))
-        return
-      }
+    // Standalone .agg() without groupby — whole-table aggregation
+    if (line.includes('.agg(') && !line.includes('.groupby(') && !line.includes('.group_by(')) {
+      steps.push(makeStep('summarize', line, lineNum,
+        'Aggregate the entire dataset — compute summary statistics across all rows.',
+        'Summarize', 'Whole-table aggregation.'
+      ))
+      return
     }
     // .value_counts()
     if (line.includes('.value_counts()')) {
@@ -389,9 +453,17 @@ export function parseCode(code: string): ParsedStep[] {
 
     // ==================== PIVOT ====================
     if (line.includes('.pivot_table(') || line.includes('.pivot(')) {
+      const indexMatch = line.match(/index\s*=\s*["'](\w+)["']/)
+      const colsMatch = line.match(/columns\s*=\s*["'](\w+)["']/)
+      const valsMatch = line.match(/values\s*=\s*["'](\w+)["']/)
+      const detail = [
+        indexMatch ? `rows: ${indexMatch[1]}` : null,
+        colsMatch ? `columns: ${colsMatch[1]}` : null,
+        valsMatch ? `values: ${valsMatch[1]}` : null,
+      ].filter(Boolean).join(', ')
       steps.push(makeStep('crosstab', line, lineNum,
-        'Create a pivot table — reorganize the data so row values become column headers.',
-        'Cross Tab', 'Pivots rows into columns.'
+        `Create a pivot table — reorganize the data so row values become column headers${detail ? ` (${detail})` : ''}.`,
+        'Cross Tab', detail ? `Pivots: ${detail}.` : 'Pivots rows into columns.'
       ))
       return
     }
@@ -408,11 +480,19 @@ export function parseCode(code: string): ParsedStep[] {
     // pandas: pd.merge() / .merge() / .join() — polars: .join()
     if (line.includes('pd.merge(') || line.includes('.merge(') || line.includes('.join(')) {
       const howMatch = line.match(/how\s*=\s*["'](\w+)["']/)
-      const onMatch = line.match(/on\s*=\s*["'](\w+)["']/)
       const joinType = howMatch ? howMatch[1] : 'inner'
+      // on= single key, on=[...] multi-key, or left_on=/right_on=
+      const onSingle = line.match(/\bon\s*=\s*["'](\w+)["']/)
+      const onMulti = line.match(/\bon\s*=\s*\[([^\]]+)\]/)
+      const leftOn = line.match(/left_on\s*=\s*["'](\w+)["']/)
+      const rightOn = line.match(/right_on\s*=\s*["'](\w+)["']/)
+      let onDesc = ''
+      if (onMulti) onDesc = ` on [${onMulti[1].replace(/["']/g, '')}]`
+      else if (onSingle) onDesc = ` on <strong>${onSingle[1]}</strong>`
+      else if (leftOn && rightOn) onDesc = ` on ${leftOn[1]} = ${rightOn[1]}`
       steps.push(makeStep('join', line, lineNum,
-        `Join (merge) two datasets using a <strong>${joinType}</strong> join${onMatch ? ` on the <strong>${onMatch[1]}</strong> column` : ''}.`,
-        'Join', `${joinType} join${onMatch ? ` on "${onMatch[1]}"` : ''}.`
+        `Join (merge) two datasets using a <strong>${joinType}</strong> join${onDesc}.`,
+        'Join', `${joinType} join${onDesc ? ` (${onDesc.replace(/<\/?strong>/g, '')})` : ''}.`
       ))
       return
     }
@@ -443,7 +523,7 @@ export function parseCode(code: string): ParsedStep[] {
     // ==================== SKIP PATTERNS ====================
     if (line.includes('.reset_index(')) return
     if (line.match(/=\s*\w+\.(?:copy|clone)\(\)/)) return
-    if (line.match(/^\.\s*agg\s*\(/) || line.match(/^\.reset_index/) || line.match(/^\)/) || line.match(/^["']\w+["']\s*:/) || line.match(/^\}\)/) || line.match(/^\s*\)/)) return
+    if (line.match(/^\.reset_index/) || line.match(/^["']\w+["']\s*:/) || line.match(/^\}\)/) || line.match(/^\s*\)/)) return
     // polars expression continuations
     if (line.match(/^\s*pl\.col\(/) || line.match(/^\s*\]\s*\)/) || line.match(/^\s*\.\s*(alias|over|sort_by)\(/)) return
   })
