@@ -38,13 +38,31 @@ export function parseCode(code: string): ParsedStep[] {
     if (!trimmed) { i++; continue }
     let combined = trimmed
     const startLine = i + 1
-    // Keep consuming lines that look like continuations
+    // Keep consuming lines that look like continuations of the same statement.
+    // Rules:
+    //   - Next line starts with '.' → it's chaining a method onto the current expression
+    //   - Current line ends with '(' or ',' or an operator → argument list continues
+    //   - Next line starts with ')' or ']' → closing an open paren/bracket from above
+    // Stop joining when the combined expression looks syntactically complete
+    // (balanced parens) AND the next line starts a new statement (doesn't start with '.').
     while (i + 1 < rawLines.length) {
       const next = rawLines[i + 1].trim()
       if (!next) { i++; break }
+
+      // Count open vs closed parens in what we have so far
+      const opens = (combined.match(/\(/g) || []).length
+      const closes = (combined.match(/\)/g) || []).length
+      const balanced = opens === closes
+
       const currentEndsOpen = /[,(+\-*\/=\\]$/.test(combined) || combined.endsWith('\\')
-      const nextIsContinuation = next.startsWith('.') || next.startsWith(')') || next.startsWith(']') || next.startsWith('+')
-      if (currentEndsOpen || nextIsContinuation) {
+      const nextIsChain = next.startsWith('.')
+      const nextIsClosing = next.startsWith(')') || next.startsWith(']')
+
+      // If parens are balanced and next line is a new method chain (starts with '.'),
+      // that means a new logical statement — do NOT join, start fresh.
+      if (balanced && nextIsChain && !currentEndsOpen) break
+
+      if (currentEndsOpen || nextIsChain || nextIsClosing) {
         combined += ' ' + next
         i++
       } else {
