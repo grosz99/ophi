@@ -42,8 +42,8 @@ export function parseCode(code: string): ParsedStep[] {
     while (i + 1 < rawLines.length) {
       const next = rawLines[i + 1].trim()
       if (!next) { i++; break }
-      const currentEndsOpen = /[,(\\]$/.test(combined) || combined.endsWith('\\')
-      const nextIsContinuation = next.startsWith('.') || next.startsWith(')') || next.startsWith(']')
+      const currentEndsOpen = /[,(+\-*\/=\\]$/.test(combined) || combined.endsWith('\\')
+      const nextIsContinuation = next.startsWith('.') || next.startsWith(')') || next.startsWith(']') || next.startsWith('+')
       if (currentEndsOpen || nextIsContinuation) {
         combined += ' ' + next
         i++
@@ -402,8 +402,10 @@ export function parseCode(code: string): ParsedStep[] {
     // pandas: .groupby() / polars: .group_by()
     if ((line.includes('.groupby(') || line.includes('.group_by(')) &&
         (line.includes('.agg(') || line.includes('.agg ') || line.includes('.sum()') || line.includes('.mean()') || line.includes('.count()') || line.includes('.nunique()') || line.includes('.n_unique()'))) {
-      const grpMatch = line.match(/\.group(?:_)?by\(\s*\[?["']?(.+?)["']?\]?\s*\)/)
-      const groups = grpMatch ? grpMatch[1].replace(/["'\[\]]/g, '').trim() : '?'
+      // Extract group keys — stop at first comma that's outside the key list or at closing paren
+      const grpMatch = line.match(/\.group(?:_)?by\(\s*\[([^\]]+)\]/) ||  // by=['a','b']
+                       line.match(/\.group(?:_)?by\(\s*["']([^"']+)["']/)   // by='a'
+      const groups = grpMatch ? grpMatch[1].replace(/["']/g, '').trim() : '?'
 
       // Collect named aggregations: name=pd.NamedAgg(...) or name=(col, func)
       const namedAggs: string[] = []
